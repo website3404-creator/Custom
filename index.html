@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matin Topup - Perfect Alignment</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { 
+            --theme-color: #00ffcc; 
+            --title-bg: rgba(0, 0, 0, 0.7);
+            --title-color: #ffffff;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; background-color: #050505;
+            font-family: 'Kantumruy Pro', sans-serif; color: white;
+            overflow-x: hidden;
+        }
+
+        /* Menu & Admin Panel */
+        .menu-btn {
+            position: fixed; top: env(safe-area-inset-top, 15px); right: 15px; z-index: 2000;
+            background: var(--theme-color); border: none; border-radius: 12px;
+            width: 45px; height: 45px; cursor: pointer;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;
+        }
+        .menu-btn span { display: block; width: 20px; height: 3px; background: #000; }
+
+        .admin-panel {
+            position: fixed; top: 0; right: -320px; width: min(310px, 90%); height: 100%;
+            background: rgba(15, 15, 15, 0.98); z-index: 2100;
+            padding: 20px; box-sizing: border-box; transition: 0.4s;
+            border-left: 2px solid var(--theme-color); overflow-y: auto;
+        }
+        .admin-panel.active { right: 0; }
+        .admin-panel h3 { color: var(--theme-color); border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 50px; }
+        .admin-panel label { font-size: 11px; display: block; margin-top: 10px; color: #aaa; }
+        .admin-panel input { width: 100%; margin: 5px 0; background: #222; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; box-sizing: border-box; }
+
+        .color-control-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .color-item { background: #252525; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; position: relative; border: 1px solid #444; }
+        .color-item input[type="color"] { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .color-dot { width: 25px; height: 25px; border-radius: 50%; border: 2px solid #fff; margin-bottom: 5px; }
+        .color-item span { font-size: 9px; text-align: center; color: #ccc; }
+
+        /* Card Layout */
+        .main-wrapper { 
+            width: 100%; display: flex; justify-content: center; 
+            padding: 60px 10px 20px 10px; box-sizing: border-box; 
+        }
+        
+        #capture-area { position: relative; width: 100%; max-width: 380px; }
+        
+        .card {
+            width: 100%; height: auto; min-height: 580px; position: relative;
+            border: 4px solid var(--theme-color); border-radius: 40px;
+            overflow: hidden; display: flex; flex-direction: column;
+            padding: 20px; padding-bottom: 40px; box-sizing: border-box; background-color: #000;
+        }
+
+        #bg-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: brightness(0.5); }
+        .content-layer { position: relative; z-index: 10; height: auto; display: flex; flex-direction: column; }
+
+        /* កែសម្រួល Header ដើម្បីឱ្យ Logo និង អក្សរ នៅចំកណ្ដាលគ្នា និងទៅកៀន */
+        .header-top { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            width: 100%;
+        }
+        
+        .web-logo { width: 70px; height: 70px; border-radius: 50%; border: 2.5px solid var(--theme-color); object-fit: cover; }
+        
+        .game-side { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; /* ឱ្យ Logo និងអក្សរ នៅចំកណ្តាលគ្នាឈរ */
+            max-width: 150px; /* កំណត់ទំហំអតិបរមាដើម្បីកុំឱ្យរុញ Logo វេបសាយ */
+        }
+
+        .game-logo-frame { 
+            width: 55px; height: 55px; 
+            border-radius: 12px; 
+            border: 2px solid var(--theme-color); 
+            padding: 4px; 
+            background: rgba(0,0,0,0.3); 
+            display: flex; justify-content: center; align-items: center; 
+            margin-bottom: 6px;
+        }
+        .game-logo { width: 100%; height: 100%; object-fit: contain; }
+
+        .game-name-tag { 
+            background: rgba(0,0,0,0.8); 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            border: 1px solid var(--theme-color); 
+            font-size: 10px; 
+            color: var(--theme-color); 
+            font-weight: bold; 
+            text-align: center;
+            white-space: nowrap; /* ការពារកុំឱ្យធ្លាក់ជួរ */
+            width: fit-content; /* រីកតាមអក្សរ */
+        }
+
+        .title-box { margin: 20px 0; text-align: center; }
+        .main-title { display: inline-block; background: var(--title-bg); padding: 8px 25px; border-radius: 15px; border: 1.5px solid var(--theme-color); font-size: 24px; font-weight: 900; color: var(--title-color); }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .item { background: rgba(0, 20, 20, 0.5); border: 1.5px solid var(--theme-color); border-radius: 18px; display: flex; align-items: center; padding: 10px; backdrop-filter: blur(8px); position: relative; }
+        .item-icon { width: 28px; height: 28px; margin-right: 8px; object-fit: contain; }
+        .details { flex: 1; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; }
+        .price-tag { background: var(--theme-color); color: #000; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 900; }
+
+        .full { grid-column: span 2; }
+        .del-btn { position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: none; z-index: 100; }
+        body.editing .del-btn { display: block; }
+
+        .download-area { padding: 20px; text-align: center; width: 100%; }
+        .dl-btn { background: #ff4757; color: white; border: none; padding: 16px 45px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; width: min(320px, 90%); }
+    </style>
+</head>
+<body class="editing">
+
+    <button class="menu-btn" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+    </button>
+
+    <div class="admin-panel" id="adminPanel">
+        <h3>🎨 រៀបចំតារាង</h3>
+        <label>ប្តូរពណ៌ផ្ទាល់ខ្លួន:</label>
+        <div class="color-control-grid">
+            <div class="color-item">
+                <div class="color-dot" id="d-theme" style="background: #00ffcc;"></div>
+                <span>Theme</span>
+                <input type="color" value="#00ffcc" oninput="updateStyle('theme', this.value)">
+            </div>
+            <div class="color-item">
+                <div class="color-dot" id="d-bg" style="background: #000000;"></div>
+                <span>បាតឈ្មោះ</span>
+                <input type="color" value="#000000" oninput="updateStyle('bg', this.value)">
+            </div>
+            <div class="color-item">
+                <div class="color-dot" id="d-text" style="background: #ffffff;"></div>
+                <span>អក្សរឈ្មោះ</span>
+                <input type="color" value="#ffffff" oninput="updateStyle('text', this.value)">
+            </div>
+        </div>
+
+        <label>កំណត់ Resolution (Pixel):</label>
+        <div style="display: flex; gap: 5px;">
+            <input type="number" id="exportWidth" value="1080">
+            <input type="number" id="exportHeight" value="1920">
+        </div>
+
+        <label>ប្តូររូបភាព:</label>
+        <input type="file" onchange="handleFile(event, 'bg-view')">
+        <input type="file" onchange="handleFile(event, 'web-logo-view')">
+        <input type="file" onchange="handleFile(event, 'game-logo-view')">
+        
+        <label>ប្តូរ Icon:</label>
+        <input type="file" onchange="handleIcons(event, 'd-icon')">
+        <input type="file" onchange="handleIcons(event, 'w-icon')">
+        <input type="file" onchange="handleIcons(event, 'm-icon')">
+        
+        <div style="display:flex; gap:5px; margin-top:15px;">
+            <button onclick="addItem('diamond')" style="flex:1; background:#27ae60; color:white; border:none; padding:10px; border-radius:8px;">+ ពេជ្រ</button>
+            <button onclick="addItem('weekly')" style="flex:1; background:#2980b9; color:white; border:none; padding:10px; border-radius:8px;">+ Week</button>
+            <button onclick="addItem('monthly')" style="flex:1; background:#e67e22; color:white; border:none; padding:10px; border-radius:8px;">+ Month</button>
+        </div>
+        
+        <button class="dl-btn" style="width:100%; margin-top:20px; background:var(--theme-color); color:black;" onclick="togglePreview()">រួចរាល់ (Preview)</button>
+    </div>
+
+    <div class="main-wrapper">
+        <div id="capture-area">
+            <div class="card" id="mainCard">
+                <img id="bg-view" src="">
+                <div class="content-layer">
+                    <div class="header-top">
+                        <img id="web-logo-view" src="https://via.placeholder.com/100?text=LOGO" class="web-logo">
+                        
+                        <div class="game-side">
+                            <div class="game-logo-frame">
+                                <img id="game-logo-view" src="https://via.placeholder.com/100?text=GAME" class="game-logo">
+                            </div>
+                            <div class="game-name-tag" contenteditable="true">MOBILE LEGENDS</div>
+                        </div>
+                    </div>
+                    <div class="title-box">
+                        <div class="main-title" contenteditable="true">តារាងតម្លៃពេជ្រ</div>
+                    </div>
+                    <div class="grid" id="priceGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="download-area">
+        <button class="dl-btn" onclick="downloadPNG()">📥 ទាញយករូបភាព (PNG)</button>
+    </div>
+
+    <script>
+        // Back Button Logic
+        function toggleMenu() {
+            const panel = document.getElementById('adminPanel');
+            panel.classList.toggle('active');
+            if (panel.classList.contains('active')) {
+                window.history.pushState({ panelOpen: true }, "");
+            }
+        }
+
+        function togglePreview() {
+            document.body.classList.toggle('editing');
+            const panel = document.getElementById('adminPanel');
+            if (panel.classList.contains('active')) {
+                panel.classList.remove('active');
+                if (window.history.state && window.history.state.panelOpen) {
+                    window.history.back();
+                }
+            }
+        }
+
+        window.onpopstate = function(event) {
+            const panel = document.getElementById('adminPanel');
+            if (panel.classList.contains('active')) {
+                panel.classList.remove('active');
+            }
+        };
+
+        function updateStyle(type, val) {
+            if(type === 'theme') { 
+                document.documentElement.style.setProperty('--theme-color', val); 
+                document.getElementById('d-theme').style.background = val; 
+            } else if(type === 'bg') { 
+                document.documentElement.style.setProperty('--title-bg', val + 'CC'); 
+                document.getElementById('d-bg').style.background = val; 
+            } else if(type === 'text') { 
+                document.documentElement.style.setProperty('--title-color', val); 
+                document.getElementById('d-text').style.background = val; 
+            }
+        }
+
+        function handleFile(event, targetId) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => { document.getElementById(targetId).src = e.target.result; }
+            reader.readAsDataURL(file);
+        }
+
+        function handleIcons(event, className) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => { document.querySelectorAll('.' + className).forEach(img => img.src = e.target.result); }
+            reader.readAsDataURL(file);
+        }
+
+        function addItem(type) {
+            const grid = document.getElementById('priceGrid');
+            const div = document.createElement('div');
+            div.className = `item ${type !== 'diamond' ? 'full' : ''}`;
+            let icon = type==='weekly'?'https://img.icons8.com/fluency/48/crown.png':(type==='monthly'?'https://img.icons8.com/color/48/diamond-ring.png':'https://img.icons8.com/color/48/diamond--v1.png');
+            div.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">X</button>
+                <img class="item-icon ${type==='weekly'?'w-icon':(type==='monthly'?'m-icon':'d-icon')}" src="${icon}">
+                <div class="details"><span contenteditable="true">${type==='weekly'?'Weekly':(type==='monthly'?'Monthly':'100')}</span><span class="price-tag" contenteditable="true">0.00$</span></div>`;
+            grid.appendChild(div);
+        }
+        
+        addItem('diamond'); addItem('weekly Pass'); addItem('monthly Pass');
+
+        function downloadPNG() {
+            document.body.classList.remove('editing');
+            const menuBtn = document.querySelector('.menu-btn');
+            const captureArea = document.getElementById('capture-area');
+            const targetWidth = parseInt(document.getElementById('exportWidth').value) || 1080;
+            const scale = targetWidth / 380; 
+
+            menuBtn.style.visibility = 'hidden';
+            html2canvas(captureArea, {
+                useCORS: true, scale: scale, backgroundColor: null,
+                height: captureArea.scrollHeight
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Matin-Topup.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                menuBtn.style.visibility = 'visible';
+            });
+        }
+    </script>
+</body>
+</html>
