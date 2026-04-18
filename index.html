@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matin Topup - Full Custom</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { 
+            --theme-color: #00ffcc; 
+            --card-bg: #000000;
+            --title-bg: rgba(0, 0, 0, 0.7);
+            --title-color: #ffffff;
+            --text-item-color: #ffffff; /* ពណ៌អក្សរក្នុងប្រឡោះពេជ្រ */
+            --price-text-color: #000000; /* ពណ៌អក្សរតម្លៃក្នុងប្រឡោះពេជ្រ */
+            --item-bg-color: rgba(255, 255, 255, 0.22); /* ពណ៌បាតប្រឡោះពេជ្រ */
+            --danger: #ff4757;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; background-color: #050505;
+            font-family: 'Kantumruy Pro', sans-serif; color: white;
+            overflow-x: hidden;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: #1a1a1a; width: 85%; max-width: 320px;
+            padding: 25px; border-radius: 20px; border: 2px solid var(--theme-color);
+            text-align: center;
+        }
+        .modal-box h4 { margin: 0 0 10px 0; color: var(--danger); }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-m { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-confirm { background: var(--danger); color: white; }
+        .btn-cancel { background: #444; color: white; }
+
+        .menu-btn {
+            position: fixed; top: 15px; right: 15px; z-index: 2000;
+            background: var(--theme-color); border: none; border-radius: 12px;
+            width: 45px; height: 45px; cursor: pointer;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;
+        }
+        .menu-btn span { display: block; width: 20px; height: 3px; background: #000; }
+
+        .admin-panel {
+            position: fixed; top: 0; right: -325px; width: min(320px, 95%); height: 100%;
+            background: rgba(15, 15, 15, 0.98); z-index: 2100;
+            padding: 20px; box-sizing: border-box; transition: 0.4s;
+            border-left: 2px solid var(--theme-color); overflow-y: auto;
+        }
+        .admin-panel.active { right: 0; }
+        .admin-panel h3 { color: var(--theme-color); border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 40px; text-align: center; }
+        
+        .admin-label { font-size: 13px; font-weight: bold; color: var(--theme-color); margin-top: 18px; display: block; border-left: 3px solid var(--theme-color); padding-left: 8px; }
+        .control-group { background: #1a1a1a; padding: 12px; border-radius: 10px; margin-top: 8px; }
+        .btn-action { width: 100%; padding: 10px; margin-top: 8px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; background: #444; }
+        .btn-remove-img { background: #631d1d; font-size: 11px; padding: 6px; margin-top: 5px; border-radius: 6px; cursor: pointer; border: 1px solid #ff4757; color: #ff9f9f; width: 100%; }
+
+        .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px; }
+        .color-row input { cursor: pointer; border: none; background: none; width: 30px; height: 30px; }
+
+        .main-wrapper { width: 100%; display: flex; justify-content: center; padding: 100px 8px 30px 8px; box-sizing: border-box; }
+        #capture-area { position: relative; width: 100%; max-width: 380px; }
+        
+        .card {
+            width: 100%; height: auto; position: relative;
+            border: 4px solid var(--theme-color); border-radius: 35px;
+            overflow: hidden; display: flex; flex-direction: column;
+            padding: 22px 14px 35px 14px; box-sizing: border-box; background-color: var(--card-bg);
+        }
+
+        #bg-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: brightness(0.4); display: none; }
+        .content-layer { position: relative; z-index: 10; display: flex; flex-direction: column; }
+
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 15px; }
+        .web-logo { width: 70px; height: 70px; border-radius: 50%; border: 2.5px solid var(--theme-color); object-fit: cover; }
+        
+        .game-side { display: flex; flex-direction: column; align-items: center; }
+        .game-logo-frame { width: 55px; height: 55px; border-radius: 12px; border: 2px solid var(--theme-color); padding: 4px; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
+        .game-logo { width: 100%; height: 100%; object-fit: contain; }
+        .game-name-tag { margin-top: 6px; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 15px; border: 1px solid var(--theme-color); font-size: 10px; color: var(--theme-color); font-weight: bold; text-transform: uppercase; }
+
+        .title-box { margin: 10px 0 20px 0; text-align: center; }
+        .main-title { display: inline-block; background: var(--title-bg); padding: 7px 25px; border-radius: 12px; border: 1.5px solid var(--theme-color); font-size: 24px; font-weight: 900; color: var(--title-color); }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        
+        .item { 
+            background: var(--item-bg-color); 
+            border: 1.5px solid var(--theme-color); 
+            border-radius: 18px; 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 6px; 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            position: relative; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .item.full { grid-column: span 2; padding: 12px 10px; } /* បន្ថែម padding សម្រាប់ item វែង */
+        
+        .item-icon { width: 24px; height: 24px; margin-right: 4px; flex-shrink: 0; }
+        
+        /* កែរូប Weekly/Monthly ឱ្យធំ */
+        .item.full .item-icon { width: 45px; height: 45px; margin-right: 12px; }
+
+        .details { flex: 1; display: flex; justify-content: center; align-items: center; gap: 4px; }
+        .item.full .details { justify-content: flex-start; } /* ឱ្យអក្សរនៅជិតរូបភាព */
+
+        .details span { font-size: 13px; font-weight: bold; color: var(--text-item-color); text-shadow: 1px 1px 2px #000; }
+        .item.full .details span { font-size: 16px; } /* អក្សរ Weekly/Monthly ធំជាងពេជ្រធម្មតា */
+
+        .price-tag { background: var(--theme-color); color: var(--price-text-color); padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 900; }
+        .item.full .price-tag { font-size: 14px; padding: 4px 10px; margin-left: auto; } /* តម្លៃនៅខាងស្តាំបំផុតសម្រាប់ Weekly/Monthly */
+
+        .del-btn { position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; font-weight: bold; display: none; z-index: 100; cursor: pointer; }
+        body.edit-mode .del-btn { display: block; }
+        
+        .btn-dl { background: var(--danger); color: white; padding: 16px; border-radius: 50px; font-weight: bold; font-size: 16px; width: min(320px, 90%); border: none; margin-bottom: 40px; cursor: pointer; }
+    </style>
+</head>
+<body onload="initAll()">
+
+    <div class="modal-overlay" id="modalClear">
+        <div class="modal-box">
+            <h4>⚠️ លុបទិន្នន័យ?</h4>
+            <p>រាល់ការកំណត់នឹងត្រូវបាត់បង់ទាំងអស់។</p>
+            <div class="modal-btns">
+                <button class="btn-m btn-cancel" onclick="closeModal()">បោះបង់</button>
+                <button class="btn-m btn-confirm" onclick="confirmClearAll()">យល់ព្រម</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="menu-btn" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+    </button>
+
+    <div class="admin-panel" id="adminPanel">
+        <h3>⚙️ កំណត់តារាង</h3>
+        
+        <span class="admin-label">ប្តូរពណ៌</span>
+        <div class="control-group">
+            <div class="color-row">ពណ៌ស៊ុម/តម្លៃ: <input type="color" id="cp-theme" oninput="updateStyle('theme', this.value, true)"></div>
+            <div class="color-row">ពណ៌បាតតារាង: <input type="color" id="cp-card" oninput="updateStyle('card-bg', this.value, true)"></div>
+            <div class="color-row">ពណ៌បាតឈ្មោះ: <input type="color" id="cp-title-bg" oninput="updateStyle('title-bg', this.value, true)"></div>
+            <div class="color-row">ពណ៌អក្សរឈ្មោះ: <input type="color" id="cp-title-color" oninput="updateStyle('title-color', this.value, true)"></div>
+            <div class="color-row">ពណ៌លេខពេជ្រ: <input type="color" id="cp-text-item" oninput="updateStyle('text-item-color', this.value, true)"></div>
+            <div class="color-row">ពណ៌អក្សរតម្លៃ: <input type="color" id="cp-price-text" oninput="updateStyle('price-text-color', this.value, true)"></div>
+            <div class="color-row">ពណ៌បាតប្រឡោះពេជ្រ: <input type="color" id="cp-item-bg" oninput="updateStyle('item-bg-color', this.value, true)"></div>
+        </div>
+
+        <span class="admin-label">រូបភាព Background</span>
+        <div class="control-group">
+            <button class="btn-action" onclick="document.getElementById('f-bg').click()">🖼️ ប្តូររូបភាព</button>
+            <button class="btn-remove-img" onclick="removeImage('bg-view')">✖ លុប Background</button>
+        </div>
+
+        <span class="admin-label">រូបភាព Logo</span>
+        <div class="control-group">
+            <button class="btn-action" onclick="document.getElementById('f-web').click()">🏢 Logo វេបសាយ</button>
+            <button class="btn-action" onclick="document.getElementById('f-game').click()">🎮 Logo ហ្គេម</button>
+        </div>
+
+        <span class="admin-label">កំណត់រូប Icon ពេជ្រ/Pass</span>
+        <div class="control-group">
+            <button class="btn-action" onclick="document.getElementById('f-icon-d').click()">💎 រូបពេជ្រ</button>
+            <button class="btn-action" onclick="document.getElementById('f-icon-w').click()">👑 រូប Weekly</button>
+            <button class="btn-action" onclick="document.getElementById('f-icon-m').click()">💠 រូប Monthly</button>
+        </div>
+
+        <span class="admin-label">បន្ថែម Item</span>
+        <button class="btn-action" style="background:#27ae60" onclick="addItem('diamond', '100', '0.00$', true)">+ ថែមពេជ្រ</button>
+        <button class="btn-action" style="background:#2980b9" onclick="addItem('weekly', 'Weekly', '0.00$', true)">+ ថែម Weekly</button>
+        <button class="btn-action" style="background:#e67e22" onclick="addItem('monthly', 'Monthly', '0.00$', true)">+ ថែម Monthly</button>
+
+        <span class="admin-label">មុខងារលុប</span>
+        <div class="control-group">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:12px;">
+                <input type="checkbox" id="checkEdit" onchange="updateEditMode()"> បើកប៊ូតុងលុប (X)
+            </label>
+        </div>
+
+        <button class="btn-action" style="background:var(--theme-color); color:black; margin-top:20px; height: 45px;" onclick="closeMenu()">រួចរាល់</button>
+        <button class="btn-remove-img" style="margin-top:10px; opacity:0.8;" onclick="openModal()">🗑️ លុបទិន្នន័យចោលទាំងអស់</button>
+    </div>
+
+    <input type="file" id="f-bg" style="display:none" onchange="handleFile(event, 'bg-view')">
+    <input type="file" id="f-web" style="display:none" onchange="handleFile(event, 'web-logo-view')">
+    <input type="file" id="f-game" style="display:none" onchange="handleFile(event, 'game-logo-view')">
+    <input type="file" id="f-icon-d" style="display:none" onchange="handleIcons(event, 'icon-d')">
+    <input type="file" id="f-icon-w" style="display:none" onchange="handleIcons(event, 'icon-w')">
+    <input type="file" id="f-icon-m" style="display:none" onchange="handleIcons(event, 'icon-m')">
+
+    <div class="main-wrapper">
+        <div id="capture-area">
+            <div class="card" id="mainCard">
+                <img id="bg-view" src="">
+                <div class="content-layer">
+                    <div class="header-top">
+                        <img id="web-logo-view" src="https://via.placeholder.com/100?text=LOGO" class="web-logo">
+                        <div class="game-side">
+                            <div class="game-logo-frame">
+                                <img id="game-logo-view" src="https://via.placeholder.com/100?text=GAME" class="game-logo">
+                            </div>
+                            <div class="game-name-tag" contenteditable="true" id="game-name" oninput="saveTextData()">MOBILE LEGENDS</div>
+                        </div>
+                    </div>
+                    <div class="title-box">
+                        <div class="main-title" contenteditable="true" id="main-title" oninput="saveTextData()">តារាងតម្លៃពេជ្រ</div>
+                    </div>
+                    <div class="grid" id="priceGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-dl" onclick="downloadPNG()">📥 ទាញយករូបភាព (PNG)</button>
+
+    <script>
+        let lastIconD = 'https://img.icons8.com/color/48/diamond--v1.png';
+        let lastIconW = 'https://img.icons8.com/fluency/48/crown.png';
+        let lastIconM = 'https://img.icons8.com/color/48/diamond-ring.png';
+
+        function setupNavigation() {
+            window.history.pushState({panel: 'closed'}, "");
+            window.onpopstate = function(event) {
+                const panel = document.getElementById('adminPanel');
+                if (panel.classList.contains('active')) {
+                    panel.classList.remove('active');
+                    window.history.pushState({panel: 'closed'}, "");
+                }
+            };
+        }
+
+        function initAll() { loadSavedData(); setupNavigation(); }
+        function toggleMenu() { document.getElementById('adminPanel').classList.add('active'); window.history.pushState({panel: 'open'}, ""); }
+        function closeMenu() { document.getElementById('adminPanel').classList.remove('active'); if(window.history.state && window.history.state.panel === 'open') window.history.back(); }
+        function openModal() { document.getElementById('modalClear').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modalClear').style.display = 'none'; }
+        function confirmClearAll() { localStorage.clear(); location.reload(); }
+
+        function updateStyle(type, val, save = false) {
+            if(type === 'theme') { document.documentElement.style.setProperty('--theme-color', val); document.getElementById('cp-theme').value = val; }
+            if(type === 'card-bg') { document.documentElement.style.setProperty('--card-bg', val); document.getElementById('cp-card').value = val; }
+            if(type === 'title-bg') { document.documentElement.style.setProperty('--title-bg', val); document.getElementById('cp-title-bg').value = val; }
+            if(type === 'title-color') { document.documentElement.style.setProperty('--title-color', val); document.getElementById('cp-title-color').value = val; }
+            if(type === 'text-item-color') { document.documentElement.style.setProperty('--text-item-color', val); document.getElementById('cp-text-item').value = val; }
+            if(type === 'price-text-color') { document.documentElement.style.setProperty('--price-text-color', val); document.getElementById('cp-price-text').value = val; }
+            if(type === 'item-bg-color') { document.documentElement.style.setProperty('--item-bg-color', val); document.getElementById('cp-item-bg').value = val; }
+            if(save) localStorage.setItem(type, val);
+        }
+
+        function handleFile(event, targetId) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                const img = document.getElementById(targetId);
+                img.src = e.target.result; img.style.display = 'block';
+                localStorage.setItem(targetId, e.target.result);
+            }; 
+            reader.readAsDataURL(file);
+        }
+
+        function handleIcons(event, className) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                document.querySelectorAll('.' + className).forEach(img => img.src = e.target.result);
+                localStorage.setItem('icon-' + className, e.target.result);
+                if(className === 'icon-d') lastIconD = e.target.result;
+                if(className === 'icon-w') lastIconW = e.target.result;
+                if(className === 'icon-m') lastIconM = e.target.result;
+            }; 
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage(targetId) {
+            const img = document.getElementById(targetId);
+            img.src = ""; img.style.display = 'none';
+            localStorage.removeItem(targetId);
+        }
+
+        function addItem(type, name, price, save = false) {
+            const grid = document.getElementById('priceGrid');
+            const div = document.createElement('div');
+            div.className = `item ${type !== 'diamond' ? 'full' : ''}`;
+            div.dataset.type = type;
+            let iconSrc = (type === 'weekly') ? lastIconW : (type === 'monthly' ? lastIconM : lastIconD);
+            let iconClass = (type === 'weekly') ? 'icon-w' : (type === 'monthly' ? 'icon-m' : 'icon-d');
+
+            div.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove(); saveItemsData()">×</button>
+                <img class="item-icon ${iconClass}" src="${iconSrc}">
+                <div class="details"><span contenteditable="true" oninput="saveItemsData()">${name}</span><span class="price-tag" contenteditable="true" oninput="saveItemsData()">${price}</span></div>`;
+            grid.appendChild(div);
+            if(save) saveItemsData();
+        }
+
+        function updateEditMode() { document.body.classList.toggle('edit-mode', document.getElementById('checkEdit').checked); }
+        function saveTextData() { localStorage.setItem('game-name', document.getElementById('game-name').innerText); localStorage.setItem('main-title', document.getElementById('main-title').innerText); }
+        function saveItemsData() {
+            const items = [];
+            document.querySelectorAll('.grid .item').forEach(el => {
+                items.push({ type: el.dataset.type, name: el.querySelector('.details span:first-child').innerText, price: el.querySelector('.price-tag').innerText });
+            });
+            localStorage.setItem('grid-items', JSON.stringify(items));
+        }
+
+        function loadSavedData() {
+            if(localStorage.getItem('theme')) updateStyle('theme', localStorage.getItem('theme'));
+            if(localStorage.getItem('card-bg')) updateStyle('card-bg', localStorage.getItem('card-bg'));
+            if(localStorage.getItem('title-bg')) updateStyle('title-bg', localStorage.getItem('title-bg'));
+            if(localStorage.getItem('title-color')) updateStyle('title-color', localStorage.getItem('title-color'));
+            if(localStorage.getItem('text-item-color')) updateStyle('text-item-color', localStorage.getItem('text-item-color'));
+            if(localStorage.getItem('price-text-color')) updateStyle('price-text-color', localStorage.getItem('price-text-color'));
+            if(localStorage.getItem('item-bg-color')) updateStyle('item-bg-color', localStorage.getItem('item-bg-color'));
+            ['bg-view', 'web-logo-view', 'game-logo-view'].forEach(id => {
+                if(localStorage.getItem(id)) { const img = document.getElementById(id); img.src = localStorage.getItem(id); img.style.display = 'block'; }
+            });
+            if(localStorage.getItem('icon-icon-d')) lastIconD = localStorage.getItem('icon-icon-d');
+            if(localStorage.getItem('icon-icon-w')) lastIconW = localStorage.getItem('icon-icon-w');
+            if(localStorage.getItem('icon-icon-m')) lastIconM = localStorage.getItem('icon-icon-m');
+            if(localStorage.getItem('game-name')) document.getElementById('game-name').innerText = localStorage.getItem('game-name');
+            if(localStorage.getItem('main-title')) document.getElementById('main-title').innerText = localStorage.getItem('main-title');
+            const savedItems = JSON.parse(localStorage.getItem('grid-items'));
+            if(savedItems && savedItems.length > 0) savedItems.forEach(item => addItem(item.type, item.name, item.price));
+            else { addItem('diamond', '100', '0.00$'); }
+        }
+
+        function downloadPNG() {
+            document.body.classList.remove('edit-mode');
+            html2canvas(document.getElementById('capture-area'), { useCORS: true, scale: 3 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Matin-Topup.png`;
+                link.href = canvas.toDataURL(); link.click();
+            });
+        }
+    </script>
+</body>
+</html>
